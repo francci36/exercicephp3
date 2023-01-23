@@ -18,9 +18,49 @@ switch($_GET['e'])
                     $verif_login->execute();
                     // on verif si un utilisateur est retourné est si il existe deja 
                     if($verif_login->rowCount() == 0)
-                    {
-
+                    { // cryptage mdp (a voir autres façon password_hash sur php.net)
+                        $password = sha1(md5($_POST['password']));
+                        $user = $db->prepare('INSERT INTO `Table_user` SET
+                                                User_Email = :email
+                                                User_Login = :login,
+                                                User_password = :password,
+                                                User_Date = CURDATE()
+                                            ');
+                        $user->bindValue(':email',$_POST['email'],PDO::PARAM_STR);
+                        $user->bindValue(':login',$_POST['login'],PDO::PARAM_STR);
+                        $user->bindValue(':password',$_password,PDO::PARAM_STR);
+                        if($user->execute())
+                        {
+                            // recupere l'id de l'user et recup la clé primaire 
+                            $id_user = $user->lastInsertId();
+                            // on crée son repertoire
+                            if(!is_dir('upload/'.$id_user))
+                            {
+                                mkdir('upload/'.$id_user);
+                            }
+                            setcookie('id_user', $id_user,(time()+3600));
+                            setcookie('pass_user',$password,(time()+3600));
+                            $_SESSION['connect'] = 1;
+                            // on redirige l'user vers sa page privée 
+                            header('location:prive.php');
+                            exit;
+                        } 
+                        else
+                        {
+                            // si il y a une erreur avec avec la requete 
+                            $message = 'Une erreur SQL est survenue';
+                        }
                     }
+                    else
+                    {
+                        // si l'user existe deja
+                        $message = 'login ou email deja enregistré';
+                    }
+                }
+                else
+                {
+                    // si les 2 mdp ne sont pas identiques
+                    $message = 'les 2 mdp ne correspondent pas!!!!';
                 }
             }
         }
