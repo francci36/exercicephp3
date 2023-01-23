@@ -32,7 +32,7 @@ switch($_GET['e'])
                         if($user->execute())
                         {
                             // recupere l'id de l'user et recup la clé primaire 
-                            $id_user = $user->lastInsertId();
+                            $id_user = $db->lastInsertId();
                             // on crée son repertoire
                             if(!is_dir('upload/'.$id_user))
                             {
@@ -73,18 +73,18 @@ switch($_GET['e'])
         {
             if(!empty($_POST['login']) && !empty($_POST['password']))
             {
-                // regarde si le login et le password existe
-                if(verifConnect($_POST['login'],$_POST['password']))
+                $verif_connect = $db->prepare('SELECT User_ID FROM `Table_user` WHERE User_Login = :login AND User_Password = :password');
+                $verif_connect->bindParam(':login',$_POST['login'],PDO::PARAM_STR);
+                $verif_connect->bindParam(':password',sha1(md5($_POST['password'])),PDO::PARAM_STR);
+                $verif_connect->execute();
+                if($verif_connect->rowCount() == 1)
                 {
+                    $user = $verif_connect->FETCH(PDO::FETCH_OBJ);
+                    setcookie('id_user',$user->User_ID,(time()+3600));
+                    setcookie('pass_user',$user->User_Password,(time()+3600));
                     $_SESSION['connect'] = 1;
-                    setcookie('login',$_POST['login'],(time()+3600));
-                    setcookie('password',$_POST['password'],(time()+3600));
                     header('location:prive.php');
                     exit;
-                }  
-                else
-                {
-                    $message = 'login ou mot de passe incorrect';
                 }
             }
             else
@@ -100,8 +100,8 @@ switch($_GET['e'])
     case 'deco':
 
         $_SESSION['connect'] = 0;
-        setcookie('login',null,(time()-10));
-        setcookie('password',null,(time()-10));
+        setcookie('id_user',null,(time()-10));
+        setcookie('pass_user',null,(time()-10));
         header('location:membres.php');
 
         break;/*This is a case statement in the switch block that checks if the value of the "e" GET parameter is "deco". If the case statement is entered, it sets the "connect" key in the $_SESSION superglobal variable to 0, sets the "login" and "password" cookies to null and the time to a negative value, this effectively deletes the cookies.

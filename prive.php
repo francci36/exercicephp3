@@ -1,11 +1,20 @@
 <?php 
 session_start();
 require('core/function.php');
-if($_SESSION['connect'] != 1 && (empty($_COOKIE['login']) || empty($_COOKIE['password'])))
+$db = pdo_connect();
+if(!verifUser())
 {
-    $message = 'Vous devez vous reconnectez';
-    header('location:membres.php?message='.urlencode($message));
+    $message = 'veuillez vous reconnecter';
+    header('location:membres.php?message='.urlencode($message));// si n'est pas connecter et diriger vers memebres.php
     exit;
+}
+$verif_user = $db->prepare('SELECT * FROM `Table_user` WHERE User_ID = :user AND User_Password = :pass LIMIT 1');
+$verif_user->bindParam(':user',$_COOKIE['id_user'],PDO::PARAM_STR);
+$verif_user->bindParam(':pass',$_COOKIE['pass_user'],PDO::PARAM_STR);
+$verif_user->execute();
+if($verif_user->rowCount() == 1)
+{
+    $user = $verif_user->fetch(PDO::FETCH_OBJ);
 }
 ?>
 <!DOCTYPE html>
@@ -20,11 +29,11 @@ if($_SESSION['connect'] != 1 && (empty($_COOKIE['login']) || empty($_COOKIE['pas
     
     <?php include('inc/header.php'); ?>
 
-    <h1>bonjour <?php echo $_COOKIE['login']; ?></h1><!--This PHP code outputs the string "bonjour " followed by the value of a cookie named 'login'. If the cookie does not exist, it will output an error message. This can be used to personalize a greeting for a user on a website, for example, if the cookie is set after a successful login, it will greet the user by their username. It's important to note that the output of this code will depend on the client's cookies, and that it is necessary to check whether the cookie is set and if it is not, handle it accordingly.-->
+    <h1>bonjour <?php echo $user->User_Login; ?></h1><!--This PHP code outputs the string "bonjour " followed by the value of a cookie named 'login'. If the cookie does not exist, it will output an error message. This can be used to personalize a greeting for a user on a website, for example, if the cookie is set after a successful login, it will greet the user by their username. It's important to note that the output of this code will depend on the client's cookies, and that it is necessary to check whether the cookie is set and if it is not, handle it accordingly.-->
 
     <?php 
     // on recup l'ensemble des fichiers
-    $liste_fichiers = scandir('upload/'.$_COOKIE['login']);
+    $liste_fichiers = scandir('upload/'.$user->$User_ID);
     if($liste_fichiers)
     {
         echo '<ul>';
@@ -33,7 +42,7 @@ if($_SESSION['connect'] != 1 && (empty($_COOKIE['login']) || empty($_COOKIE['pas
         {
             if($i>1)
             {
-                echo '<li><a href="upload/'.$_COOKIE['login'].'/'.$fichier.'" target="_blank">'.$fichier.'</a><a href="action.php?e=deletefichier&fichier='.$fichier.'"><img src="assets/images/corbeille.png"><a/></li>';
+                echo '<li><a href="upload/'.$user->User_ID.'/'.$fichier.'" target="_blank">'.$fichier.'</a><a href="action.php?e=deletefichier&fichier='.$fichier.'"><img src="assets/images/corbeille.png"><a/></li>';
             }
             $i++;
         }

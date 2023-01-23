@@ -1,13 +1,9 @@
 <?php 
 session_start();
 require('core/function.php');
-// on verifie si la personne est deja connécté
-if($_SESSION['connect'] == 1 && (!empty($_COOKIE['login']) || !empty($_COOKIE['password']))) /*Conditional statement in PHP that checks if the following conditions are true:
-The value of the "connect" key in the $_SESSION superglobal variable is equal to 1. This variable is likely used to check if the user is logged in.Either the "login" key or the "password" key in the $_COOKIE superglobal variable is not empty.
-If both conditions are true, then the code inside the if statement will execute. This check is likely used to confirm that the user is logged in and that the login and password cookies are set.
-It is important to note that this type of check is not a secure way to check if the user is authenticated as cookies can be tampered with and sessions can be hijacked. It is recommended to use a more secure method such as using secure tokens and checking them against a database or using a secure session management library.*/ 
+$db = pdo_connect();
+if(!verifUser())
 {
-    // si c'est le cas redirection vers la page prive.php
     header('location:prive.php');
     exit;
 }

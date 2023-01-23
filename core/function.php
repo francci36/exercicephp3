@@ -11,7 +11,30 @@ function pdo_connect()/*pour se connecter a la BDD*/
     catch(PDOException $exception) {
         exit('Erreur de connexion à la base de données');
     }
-
+}
+function verifUser()
+{
+    global $db;
+    global $_COOKIE;
+    if($_COOKIE['id_user'] && $_COOKIE['pass_user'])
+    {
+        $verif_user = $db->prepare('SELECT User_ID FROM `Table_user` WHERE User_ID = :user AND User_Password = :pass LIMIT 1');
+        $verif_user->bindParam(':user',$_COOKIE['id_user'],PDO::PARAM_STR);
+        $verif_user->bindParam(':pass',$_COOKIE['pass_user'],PDO::PARAM_STR);
+        $verif_user->execute();
+        if($verif_user->rowCount() == 1)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
 }
 
 $menu_footer = array(
