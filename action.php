@@ -12,7 +12,7 @@ switch($_GET['e'])
             { // verif si les mdp sont identiques
                 if($_POST['password'] == $_POST['password2'])
                 {
-                    $verif_login = $db->prepare('SELECT User_ID FROM `Table_user` WHERE User_Login = :Login OR User_Email = :email');
+                    $verif_login = $db->prepare('SELECT User_ID FROM `Table_user` WHERE User_Login = :login OR User_Email = :email');
                     $verif_login->bindParam(':login',$_POST['login'],PDO::PARAM_STR);// PARAM_STR = chaine de characteres sinon marche pas
                     $verif_login->bindParam(':email',$_POST['email'],PDO::PARAM_STR);
                     $verif_login->execute();
@@ -21,14 +21,14 @@ switch($_GET['e'])
                     { // cryptage mdp (a voir autres façon password_hash sur php.net)
                         $password = sha1(md5($_POST['password']));
                         $user = $db->prepare('INSERT INTO `Table_user` SET
-                                                User_Email = :email
+                                                User_Email = :email,
                                                 User_Login = :login,
                                                 User_password = :password,
                                                 User_Date = CURDATE()
                                             ');
                         $user->bindValue(':email',$_POST['email'],PDO::PARAM_STR);
                         $user->bindValue(':login',$_POST['login'],PDO::PARAM_STR);
-                        $user->bindValue(':password',$_password,PDO::PARAM_STR);
+                        $user->bindValue(':password',$password,PDO::PARAM_STR);
                         if($user->execute())
                         {
                             // recupere l'id de l'user et recup la clé primaire 
@@ -64,6 +64,9 @@ switch($_GET['e'])
                 }
             }
         }
+        header('location:inscription.php?message='.urlencode($message));
+
+        break;
 
     case 'connexion':
         if(isset($_POST['submit']))
