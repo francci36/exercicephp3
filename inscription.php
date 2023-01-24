@@ -18,7 +18,7 @@ if($_SESSION['connect'] == 1 && (!empty($_COOKIE['login']) || !empty($_COOKIE['p
 </head>
 <body>
     <?php include('inc/header.php'); ?>
-    <form name="Inscription" method="POST" action="action.php?e=inscription">
+    <form name="inscription" method="POST" action="action.php?e=inscription">
         <label for="login">Login:</label>
         <input type="text" name="login" required>
         <br>

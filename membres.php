@@ -2,7 +2,7 @@
 session_start();
 require('core/function.php');
 $db = pdo_connect();
-if(!verifUser())
+if(verifUser())
 {
     header('location:prive.php');
     exit;

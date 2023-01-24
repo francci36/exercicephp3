@@ -18,13 +18,13 @@ function verifUser()
     global $_COOKIE;
     if($_COOKIE['id_user'] && $_COOKIE['pass_user'])
     {
-        $verif_user = $db->prepare('SELECT User_ID FROM `Table_user` WHERE User_ID = :user AND User_Password = :pass LIMIT 1');
+        $verif_user = $db->prepare('SELECT * FROM `table_user` WHERE User_ID = :user AND User_Password = :pass LIMIT 1');
         $verif_user->bindParam(':user',$_COOKIE['id_user'],PDO::PARAM_STR);
         $verif_user->bindParam(':pass',$_COOKIE['pass_user'],PDO::PARAM_STR);
         $verif_user->execute();
         if($verif_user->rowCount() == 1)
         {
-            return true;
+            return $verif_user->fetch(PDO::FETCH_OBJ);
         }
         else
         {
@@ -143,6 +143,8 @@ function uploadFichiers()
 {
     global $extensions;
     global $_FILES;
+    global $db;
+    global $user;
     $message = array();
     //on fait une boucle pour parcourir les fichiers
     for($i=0;$i<count($_FILES['fichier']['name']);$i++)
@@ -152,9 +154,23 @@ function uploadFichiers()
         if(in_array($verif_extension,$extensions))
         {
             $nom_fichier = renomme_image($_FILES['fichier']['name'][$i]);
-            if(move_uploaded_file($_FILES['fichier']['tmp_name'][$i],'upload/'.$_COOKIE['login'].'/'.$nom_fichier))
+            if(move_uploaded_file($_FILES['fichier']['tmp_name'][$i],'upload/'.$user->User_ID.'/'.$nom_fichier))
             {
+                // message de succes
                 $message[$i] = 'Fichier'.$_FILES['fichier']['name'][$i].' envoyé';
+                // on insere le fichier dans la bdd
+                $file = $db->prepare('INSERT INTO `table_file` SET 
+                                        File_User_ID = :user_id,
+                                        File_Name = :nom_fichier,
+                                        File_Original_Name = :original_name,
+                                        File_Date_Add = CURDATE(),
+                                        File_Download = 0,
+                                        File_Date_Download = CURDATE()
+                                    ');
+            $file->bindValue(':user_id',$user->User_ID,PDO::PARAM_INT);
+            $file->bindValue(':nom_fichier',$nom_fichier,PDO::PARAM_STR);
+            $file->bindValue(':original_name',$_FILES['fichier']['name'][$i],PDO::PARAM_STR);
+            $file->execute();
             }
             else
             {
@@ -165,7 +181,50 @@ function uploadFichiers()
         {
             $message[$i] = 'Extension non autorisé pour '.$_FILES['fichier']['name'][$i];
         }
+        
     }
+    return $message;
+}
+function captcha1()
+{
+    // on gere deux nombre aleatoire
+    $nb1 = rand(1,100);
+    $nb2 =rand(1,100);
+    // on fait l'opération
+    $result =$nb1+$nb2;
+    // On enregistre le résultat dans la session
+    $_SESSION['captcha'] = $result;
+    // on retourne l'opération
+    return $nb1.'+'.$nb2.'=';
+}
+function captcha2()
+{
+    $question = array("Quel est le prénom de la première dame de France?",
+    "Quel est la couleur du cheval blanc d'henri iv?",
+    "Indiquez le prénom du formateur favoris de Gérald?",
+    "Combien de seconde possède une heure?",
+    "Que bois la vache?",
+    "Que fume Geoffrey?",
+    "où est la voiture de Maxime?",
+    "Quel est la meilleur chaîne de supermarché?"
+    
+    );
+    $reponse = array(
+        array("Brigitte", "BRIGITE","brigitte"),
+        array ("Jaune","JAUNE","jaune"),
+        array ("Natacha","Clhoé","Didier"),
+        array("3600"),
+        array("eau","EAU","l'eau", "L'eau"),
+        array("herbe","cbd","résine"),
+        array("sur un parking","au bord de la route"),
+        array("lidl","aldi","neto")
+    );
+    // on selectionne une clé aléatoire comprise entre 0 et la taille du tableau
+    $aleatoire = rand(0,(count($question)-1));
+    // on enregistre en session la réponse
+    $_SESSION['captcha2'] = serialize($reponse[$aleatoire]);
+    // on retourne la question
+    return $question[$aleatoire];
 }
 ?><!--PHP code that defines an array called $extensions that contains file extensions and a function called uploadFichier. The $extensions array contains five strings: '.pdf', '.png', '.jpg', '.mp4', and '.gif'.
 The uploadFichier function takes one parameter: $fichier. It starts by using the global statement to bring the $extensions array into the function's scope.
